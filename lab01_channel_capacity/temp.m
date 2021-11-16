@@ -15,11 +15,12 @@ close all;
 %  예상: 거리 D가 증가할수록 간섭 완화 --> 채널 용량 증가
 
 D = [1:50]';
-R1 = 20;
+R1 = 10;
 R2 = 20;
 
 B = 10*10^6;    % 채널 대역폭 [Hz]
 P_noise_dB = -80;   % 잡음 전력 [dBm]
+
 % -----------------------------------
 % 1. 채널 모델
 % -----------------------------------
@@ -56,15 +57,15 @@ Capacity = zeros(length(D),2);
 
 P_rx_dB(1) = P_tx_dB(1) - path_loss(R1, alpha, PL_ref(1), d_ref(1)); 
     % flow1의 수신전력 
-P_rx_dB(2) = P_tx_dB(2) - path_loss(R2, alpha, PL_ref(2), d_ref(2)); 
+P_rx_dB(2) = P_tx_dB(2) - path_loss(R2, alpha, PL_ref(1), d_ref(1)); 
     % flow2의 수신전력
 
 for i = 1:length(D)
     % 간섭 전력 계산
-    P_int_dB(i,1) = P_tx_dB(2) - path_loss(D(i), alpha, PL_ref(1), d_ref(1));
+    P_int_dB(i,1) = P_tx_dB(2) - path_loss(R1+D(i), alpha, PL_ref(1), d_ref(1));
         % node B에서의 간섭 = 전송 노드 C에 대한 수신 전력
         % B와 C 사이의 거리 = D(i)
-    P_int_dB(i,2) = P_tx_dB(1) - path_loss(D(i), alpha, PL_ref(2), d_ref(2));
+    P_int_dB(i,2) = P_tx_dB(1) - path_loss(D(i)+R2, alpha, PL_ref(1), d_ref(1));
         % node D에서의 간섭 = 전송 노드 A에 대한 수신 전력
         % A와 D 사이의 거리 = R1+D(i)+R2
     
@@ -76,17 +77,18 @@ for i = 1:length(D)
     Capacity(i,:) = B*log2(1+SINR(i,:))/10^6;
 end
 
+SINR_dB = 10*log10(SINR(:,:));
+
 figure;
-plot(D, 10*log10(SINR(:,1)), 'r-', D, 10*log10(SINR(:,2)), 'g:');
+plot(D, 10*log10(SINR(:,1)), 'r-', D, 10*log10(SINR(:,2)), 'b-');
 legend('flow1', 'flow2');
 xlabel('distance between nodes B and C (m)');
 ylabel('SINR (dB)');
 grid;
 
 figure;
-plot(D, Capacity(:,1), 'r-', D, Capacity(:,2), 'g:', D, Capacity(:,1)+Capacity(:,2),'b-.');
+plot(D, Capacity(:,1), 'r-', D, Capacity(:,2), 'b-', D, Capacity(:,1)+Capacity(:,2),'k-.');
 legend('flow1', 'flow2', 'total');
 xlabel('distance between nodes B and C (m)');
 ylabel('Capacity (Mb/s)');
 grid;
-

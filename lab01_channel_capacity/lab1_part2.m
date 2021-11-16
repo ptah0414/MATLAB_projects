@@ -57,7 +57,7 @@ Capacity = zeros(length(D),2);
 
 P_rx_dB(1) = P_tx_dB(1) - path_loss(R1, alpha, PL_ref(1), d_ref(1)); 
     % flow1의 수신전력 
-P_rx_dB(2) = P_tx_dB(2) - path_loss(R2, alpha, PL_ref(2), d_ref(2)); 
+P_rx_dB(2) = P_tx_dB(2) - path_loss(R2, alpha, PL_ref(1), d_ref(1)); 
     % flow2의 수신전력
 
 for i = 1:length(D)
@@ -65,7 +65,7 @@ for i = 1:length(D)
     P_int_dB(i,1) = P_tx_dB(2) - path_loss(D(i), alpha, PL_ref(1), d_ref(1));
         % node B에서의 간섭 = 전송 노드 C에 대한 수신 전력
         % B와 C 사이의 거리 = D(i)
-    P_int_dB(i,2) = P_tx_dB(1) - path_loss(D(i), alpha, PL_ref(2), d_ref(2));
+    P_int_dB(i,2) = P_tx_dB(1) - path_loss(R1+D(i)+R2, alpha, PL_ref(1), d_ref(1));
         % node D에서의 간섭 = 전송 노드 A에 대한 수신 전력
         % A와 D 사이의 거리 = R1+D(i)+R2
     
@@ -76,6 +76,8 @@ for i = 1:length(D)
     % Shannon capacity 계산 (단위: Mb/s)
     Capacity(i,:) = B*log2(1+SINR(i,:))/10^6;
 end
+
+SINR_dB = 10*log10(SINR(:,:));
 
 figure;
 plot(D, 10*log10(SINR(:,1)), 'r-', D, 10*log10(SINR(:,2)), 'g:');

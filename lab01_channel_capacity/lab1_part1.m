@@ -28,7 +28,7 @@ B = 20*10^6;        % 대역폭 [Hz]
 R = [6 12 24 48]*10^6; % 전송속도 [bit/sec]
     % 4가지 MCS 고려: BPSK 1/2, QPSK 1/2, 16QAM 1/2, 64QAM 2/3
 M = [2 4 16 64];      % BER 계산식의 파라미터
-b = (1/2)*log2(M);    % BER 계산식의 파라미터 
+b = (1/2)*log2(M);    % BER 계산식의 파라미터
 
 target_FER = 0.01; % target FER for AMC (1%)
 
@@ -53,7 +53,7 @@ grid;
 
 
 % 4. Calculate BER/FER
-SNR = power(10, SNR_dB/10);
+SNR = 10.^SNR_dB/10;
     % SNR in linear scale, 
     % Note: SNR_dB = 10*log10(SNR) 
     % SNR = 10 ^ (SNR_dB/10)
@@ -93,12 +93,31 @@ legend('BPSK 1/2', 'QPSK 1/2', '16QAM 1/2', '64QAM 2/3');
 grid;
 
 % 5. 최대 커버리지와 최소 SNR값 구하기
-max_coverage = zeros(length(R), 1); % 각 MCS별 최대 커버리지
+max_coverage = zeros(length(R), 1); % 각 MCS별 최대 커버리지 (4*1)
 min_SNR_req = zeros(length(R), 1);  % 각 MCS별 최소 요구 SNR
 
-for i = 1:length(R)
-    max_coverage(i) = % 여기를 완성하세요.
-        % 주어진 MCS에서 FER 값이 target FER 이하가 되는 최대 거리
-    min_SNR_req(i) = % 여기를 완성하세요.
-        % 주어진 MCS에서 FER 값이 target FER 이하가 되는 최소 SNR값 (dB)
-end
+% P_fer = 0.01
+% BPSK  145m 1.4202dB
+% QPSK  141m 1.8238dB
+% 16QAM 134m 2.5584dB
+% 64QAM 127m 3.3324dB
+
+% d = 127;      %  송수신 노드 거리 [m]
+% PL_dB = PL0 + 10*alpha*log10(d/d0);   % path-loss [dB]
+% 
+% Prx_dB = Ptx_dB - PL_dB; % receiving power [dB]
+%     % PL = Ptx / Prx
+%     % PL(dB) = Ptx(dB) - Prx(dB)
+%     % Prx(dB) = Ptx(dB) - PL(dB)
+% SNR_dB = Prx_dB - Pnoise_dB;
+%     % SNR = Prx / Pnoise
+%     % SNR(dB) = Prx(dB) - Pnoise(dB)
+
+
+
+% for i = 1:length(R)
+%     max_coverage(i) = % 여기를 완성하세요.
+%         % 주어진 MCS에서 FER 값이 target FER 이하가 되는 최대 거리
+%     min_SNR_req(i) = % 여기를 완성하세요.
+%         % 주어진 MCS에서 FER 값이 target FER 이하가 되는 최소 SNR값 (dB)
+% end
