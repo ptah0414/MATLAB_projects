@@ -11,12 +11,12 @@
 
 % 하나의 시간 슬롯은 한 명의 사용자에게 할당된다고 가정
 
-clear;
+clear; clc;
 close all;
 
 N_slot = 1000;    % 전체 슬롯 수
 N_user = 4;       % 사용자 수
-distance = [100 200 300 400]; % 기지국과의 거리
+distance = [200 300 400 500]; % 기지국과의 거리
 
 % SNR값에 따라 4가지 MCS 고려
 SNR_TH = [30 20 10];     % unit: dB

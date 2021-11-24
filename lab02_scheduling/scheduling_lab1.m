@@ -10,7 +10,7 @@
 
 % 하나의 시간 슬롯은 한 명의 사용자에게 할당된다고 가정
 
-clear;
+clear; clc;
 close all;
 
 N_slot = 1000;    % 전체 슬롯 수
@@ -33,7 +33,7 @@ avg_th_case3 = zeros(N_slot,N_user);
 %   - User1: SNR=30dB --> Rate = 8 bit/sec
 %   - User2: SNR=10dB --> Rate = 4 bit/sec
 %   - User3: SNR= 5dB --> Rate = 1 bit/sec
-inst_rate = [8 4 1]; % 각 사용자별 슬롯당 전송 바이트 양
+inst_rate = [12 3 1]; % 각 사용자별 슬롯당 전송 바이트 양
 
 % 매 슬롯별 스케줄링 결과 선택된 사용자 인덱스
 user_index_case1 = zeros(N_slot,1);  
