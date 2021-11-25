@@ -5,6 +5,7 @@
 %-------------------------------------------
 clear;
 close all;
+clc;
 
 DEBUG_MODE = 0;
     % debug mode에서는 동작을 이해하기 위해 전체 슬롯수를 작게 설정하고
@@ -24,16 +25,16 @@ BEB_ENABLE = 1;
 % 파라미터와 변수 선언/초기화
 %------------------------------------------
 N_slot = 1000000;       % 전체 슬롯 수
-N_user = 10;             % 사용자 수
+N_user = 50;             % 사용자 수
 CW_min = 16*ones(1,N_user);   % contention window 최소값
-%CW_min = [16 32 64 64];
+%CW_min = [16 32 64 128];
 L_pkt = 1000*ones(1,N_user);
                         % 패킷 크기 (byte)
-%L_pkt = [500, 1000, 1000, 2000];                        
+%L_pkt = [2000, 1000, 500, 100];                        
 
 TX_rate = 24*10^6*ones(1,N_user);      
                         % 전송 속도 (24 Mb/s)
-%TX_rate = [24 24 12 6]*10^6; 
+%TX_rate = [48 24 12 6]*10^6; 
 
 T_slot = 10*10^-6;      % time slot 크기 = 10 us
 T_txslot = floor(8*L_pkt./TX_rate./T_slot);   
