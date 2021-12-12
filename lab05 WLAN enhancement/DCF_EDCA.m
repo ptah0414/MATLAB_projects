@@ -1,16 +1,11 @@
 %-------------------------------------------
-%  INC4103: fragmentation & aggregation
-%  by E.-C. Park
+%  INC4103: IEEE 802.11 DCF & EDCA
+% (1) Derive throghput model of DCF
+% (2) Understand service differentiation of EDCA
+% (3) Understand throughput-fairness of DCF
 %-------------------------------------------
 clear; clc;
 close all;
-
-% frags for fragmentation and A_MSDU/A_MPDU 
-FRAG_ENABLE = 0;
-A_MSDU_ENABLE = 1;
-A_MPDU_ENABLE = 0;
-
-
 
 BEB_ENABLE = 0;
     
@@ -19,41 +14,29 @@ BEB_ENABLE = 0;
 %-------------------------------------------
 % A1. Carrier sensing is perfect so that all the users can completely 
 % detect busy channel
-% A2. The bit error rate is constant
+% A2. There is no transmssion failure due to poor quality of wireless
+% channel, i.e., transmission failure only occurs due to collision
 % A3. All the users always have data to send 
 
 %------------------------------------------
 % PARAMETERS & VARIABLES
 %------------------------------------------
 N_slot = 1000000;         % total number of slots
-N_user = 3;             % number of users
-%N_frag = 3*ones(1,N_user);     % number of fragments
-N_frag = [1 1 1];
+N_user = 2;             % number of users
 
-%N_agg = 4*ones(1,N_user);      % number of packets aggreagted
-N_agg = [2 4 8];
-
-%BER = 0;
-BER = 10^-6;                 % bit error rate
-
-
-TX_rate = 24*10^6*ones(1,N_user); 
+R_data = 24*10^6*ones(1,N_user); 
+%R_data = [12 24 48]*10^6;
                         % transmission rate 
 
-CW_min = 16*ones(1,N_user);             % minimum contention window
+%CW_min = 8*ones(1,N_user);             % minimum contention window
+CW_min = [8 262144];
 
-L_pkt = 1000*ones(1,N_user);
-L_frag = L_pkt./N_frag;
-                        % packet size (byte)
+AIFSN = 2*ones(1,N_user);  % AIFSN for EDCA, default = 3 considering DIFS
+%AIFSN = [2 10];
 
-if (A_MSDU_ENABLE == 1)
-    FER = 1-(1-BER).^(L_pkt.*N_agg*8)
-elseif (A_MPDU_ENABLE == 1) 
-    FER = 1-(1-BER).^(L_pkt*8)    % frame error rate
-elseif (FRAG_ENABLE == 1)
-    FER = 1-(1-BER).^(L_frag*8)
-end
-
+L_data = 1000*ones(1,N_user);
+                        % data frame size (byte)
+%L_data = [500 1000 2000];
 
 % 802.11g MAC/PHY spec.
 T_slot = 9*10^-6;      % time slot = 20 us
@@ -61,26 +44,14 @@ L_macH = 28;            % length of the MAC Header (bytes)
 T_phyH = 44*10^-6;     % PHY Header transmission time (sec)
 T_sifs = 10*10^-6;      % SIFS time (sec)
 L_ack = 14;             % length of ACK (byte)
-L_back = L_ack + 8;
-Basic_rate = 6*10^6;    % basic rate for ACK (bit/sec)
-T_ack = T_phyH + L_ack*8/Basic_rate;    
+R_ack = 6*10^6;    % basic rate for ACK (bit/sec)
+T_ack = T_phyH + L_ack*8/R_ack;    
                         % ACK transmission time (sec)
-T_back = T_phyH + L_ack*8/Basic_rate;                        
-if (FRAG_ENABLE == 1)
-    T_data = T_phyH + (L_macH + L_frag)*8./TX_rate; 
+T_data = T_phyH + (L_macH + L_data)*8./R_data; 
                         % data frame transmission time (sec)
-    T_txslot = floor( N_frag.*(T_data + T_sifs + T_ack)/T_slot);   
-            % number of slots required to transmit one packet (consisting
-            % of N fragmetns)
-elseif (A_MSDU_ENABLE == 1)
-    T_data = T_phyH + (L_macH + N_agg .* L_pkt)*8./TX_rate; 
-                        % data frame transmission time (sec)
-    T_txslot = floor( (T_data + T_sifs + T_ack)/T_slot);   
-elseif (A_MPDU_ENABLE == 1)
-    T_data = T_phyH + N_agg.*(L_macH + L_pkt)*8./TX_rate; 
-    T_txslot = floor( (T_data + T_sifs + T_back)/T_slot);   
-end
-AIFSN = 3*ones(1,N_user);  % AIFSN for EDCA
+
+T_txslot = floor( (T_data + T_sifs + T_ack)/T_slot);   
+            % number of slots required to transmit one data frame
 
 CW_max = 1024;              
             % when BEB is enabled, CW is doubled if collision occurs
@@ -91,7 +62,7 @@ CW = CW_min.*ones(1,N_user);                % initial contention window
 %initial backoff counter & aifs
 bc = ceil(rand(1,N_user).*CW);
 aifs = AIFSN;
-
+aifs_reset = zeros(1,N_user);
 
 tx_state = zeros(N_slot,N_user);
 % tx_state(i,j) = transmission status at time slot i for user j
@@ -100,7 +71,7 @@ STATE_TX  = 1;   % transmission state (without collision)
 STATE_CS  = 2;   % carrier-sensing state
 STATE_COL = 3;   % collision state
 
-n_txnode = zeros(N_slot,1); % number of TX nodes
+n_txnode = 0; % number of TX nodes
 
 
 n_access = zeros(1,N_user);
@@ -128,8 +99,13 @@ while(i < N_slot-1)
         end
         for j=1:N_user
             if (aifs(j) == 0)
-                bc(j) = bc(j) -1; 
+                %if (aifs_reset(j) == 1)
+                    bc(j) = bc(j) -1; 
+                %elseif (aifs_reset(j) == 0)
+                %    bc(j) = 0;
+                %end
             end
+                
         end
         % decrement backoff counter by 1 for users after waiting for AIFSN
     end
@@ -144,7 +120,7 @@ while(i < N_slot-1)
             n_access(j) = n_access(j)+1;
 
             bc(j) = ceil(rand*CW(j));
-            aifs(j) = AIFSN(j);
+            aifs(j) = AIFSN(j);            
             % re-select a new random backoff & aifs
         end
     end
@@ -160,6 +136,7 @@ while(i < N_slot-1)
                 tx_state(i:tx_duration,j) = STATE_CS;
                 % set state = carrier sensing
                 aifs(j) = AIFSN(j);
+                %aifs_reset(j) = 1;
                 % reset aifs after sensing busy channel
             end
         end
@@ -169,17 +146,8 @@ while(i < N_slot-1)
             % only one node accesses channel, i.e., no collision
             for (j=1:N_user)
                 if (tx_state(i,j) == STATE_TX)
-                    if (FRAG_ENABLE == 1)
-                        n_success(j) = n_success(j) + sum(rand(1,N_frag(j))>FER(j));
-                    elseif (A_MSDU_ENABLE == 1)
-                        flag_success = rand > FER(j);
-                        n_success(j) = n_success(j) + flag_success;                       
-                        if ( (flag_success == 0) && (BEB_ENABLE == 1))
-                            CW(j) = min(CW(j) * 2, CW_max); 
-                        end                    
-                    elseif (A_MPDU_ENABLE == 1)
-                        n_success(j) = n_success(j) + sum(rand(1,N_agg(j))>FER(j));
-                    end
+                    n_success(j) = n_success(j) + 1;
+                    %aifs_reset(j) = 0;
                     % BEB here...
                     if (BEB_ENABLE == 1)
                         CW(j) = CW_min(j);
@@ -194,6 +162,7 @@ while(i < N_slot-1)
                     tx_state(i:tx_duration,j) = STATE_COL;
                     % set state = collision
                     n_collision(j) = n_collision(j)+1;
+                    %aifs_reset(j) = 1;
                     % BEB here.....
                     if (BEB_ENABLE == 1)
                         CW(j) = min(CW(j) * 2, CW_max); 
@@ -205,8 +174,8 @@ while(i < N_slot-1)
         i = i + max_duration+1;   % increase time index by T_txslot
         n_txnode = 0;
     else
-        i=i+1;  % increase time index by 1        
-    end % end for busy-channel
+        i=i+1;  % increase time index by 1 (if n_txnode = 0)        
+    end 
     
 end
 
@@ -216,18 +185,17 @@ end
 %------------------------------
 % statistics
 %------------------------------
-%n_access 
+n_access 
+t_access = n_access.*T_data
+    % channel access time
 %n_collision
-if (FRAG_ENABLE == 1)
-    per_user_th = (n_success .* L_frag * 8) / (N_slot*T_slot) / 10^6  % Mb/s
-elseif (A_MSDU_ENABLE == 1)
-    per_user_th = (n_success .* N_agg .* L_pkt * 8) / (N_slot*T_slot) / 10^6  % Mb/s
-elseif (A_MPDU_ENABLE == 1)
-    per_user_th = (n_success .* L_pkt * 8) / (N_slot*T_slot) / 10^6  % Mb/s
-end
+%n_success
+%per_user_access = n_access/(sum(n_access))
+
+per_user_th = (n_success .* L_data * 8) / (N_slot*T_slot) / 10^6  % Mb/s
 total_th = sum(per_user_th) % Mb/s
-%fairness_index = total_th^2 / (N_user * sum(per_user_th.*per_user_th))
-    % fraction of time slot occupied without collision
+fairness_index = total_th^2 / (N_user * sum(per_user_th.*per_user_th))
+
 %collision_prob = sum(n_collision)/sum(n_access)
 %utilization = sum(sum(tx_state==1)) / N_slot
 
