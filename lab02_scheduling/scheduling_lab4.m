@@ -50,10 +50,10 @@ channel_quality_prob = [1.0   0.0   0.0;  % »ç¿ëÀÚ1
 
 
 % minimum required tput
-R_min = [0 0 0];
-% R_min = [0.5 0.5 0.5];
-% R_min = [0.8 0.4 0.1];
-% R_min = [1 1 1];
+%R_min = [0 0 0];
+%R_min = [0.5 0.5 0.5];
+%R_min = [0.8 0.4 0.1];
+R_min = [1 1 1];
 
 for i = 2:N_slot
     

@@ -18,7 +18,7 @@ distance = d1;
 alpha = (path_loss_dB - PL0)/(10*log10(distance/d0)); %(60 - 50)/(10*log10(10/5));
 
 
-Ptx_dB = 20;   % 전송 전력 [dBm]
+Ptx_dB = 30;   % 전송 전력 [dBm]
 Pnoise_dB = -80;% 잡음 전력 [dBm]
 
 
